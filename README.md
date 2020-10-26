@@ -8,3 +8,11 @@ KG dataset WN18 [Bordes et al., 2014]' which is Semantic Matching Energy Functio
 
 WN9-IMG dataset is downloaded from
 https://github.com/xrb92/IKRL - GitHub of one of the author of IKRL. It was named data.rar which later I renamed to WN9-IMG_IKRL.rar.
+
+
+
+To export conda package:
+conda list --export > package-list.txt
+
+Reinstall packages from the export file:
+conda create -n myenv --file package-list.txt
