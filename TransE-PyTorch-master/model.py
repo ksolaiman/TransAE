@@ -175,7 +175,7 @@ class AutoEncoder(torch.nn.Module):
         ## b = torch.cat((v5_t, v5_i), dim=1) 
         ## recon_error = self.criterion(a, b)
         print(recon_error)
-        print(recon_error.size())
+        
         return v3, recon_error
         
         
