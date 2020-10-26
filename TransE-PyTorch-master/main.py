@@ -87,7 +87,7 @@ def collate_fn(data):
     heads, relations, tails = list(), list(), list()
     for i in range(len(data)):
         heads.append(int(data[i][0]))
-        relations.append(data[i][1])
+        relations.append(int(data[i][1]))
         tails.append(int(data[i][2])) # coz they are string
     return torch.tensor(heads), torch.tensor(relations), torch.tensor(tails)
 
