@@ -189,9 +189,8 @@ class TransE(nn.Module):
         self.device = device
         self.norm = norm
         self.dim = dim                                # probably d in the TransAE paper
-        self.entities_emb = self._init_enitity_emb()
+        # self.entities_emb = self._init_enitity_emb()
         self.autoencoder = AutoEncoder(self.entity2id, self.entity_count)
-        # self.entities_emb = self.autoencoder.encoder_combined_linear
         self.relations_emb = self._init_relation_emb()
         self.criterion = nn.MarginRankingLoss(margin=margin, reduction='mean') # replaced reduction='none', as it makes it easier to add reconstruction loss
 
