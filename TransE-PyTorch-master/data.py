@@ -5,7 +5,7 @@ import os
 
 Mapping = Dict[str, int]
 
-def create_mappings_for_W9(path: str) -> Tuple[Mapping, Mapping]:
+def create_mappings_for_WN9(path: str) -> Tuple[Mapping, Mapping]:
     """Creates separate mappings to indices for entities and relations."""
     entity2id_path = os.path.join(path, "entity2id.txt")
     relation2id_path = os.path.join(path, "relation2id.txt")
@@ -25,7 +25,7 @@ def create_mappings_for_W9(path: str) -> Tuple[Mapping, Mapping]:
     
     return entity2id, relation2id
 
-def create_mappings(dataset_path: str) -> Tuple[Mapping, Mapping]:
+def create_mappings(dataset_path: str, data_type='FB15K': str) -> Tuple[Mapping, Mapping]:
     """Creates separate mappings to indices for entities and relations."""
     # counters to have entities/relations sorted from most frequent
     entity_counter = Counter()
@@ -33,7 +33,10 @@ def create_mappings(dataset_path: str) -> Tuple[Mapping, Mapping]:
     with open(dataset_path, "r") as f:
         for line in f:
             # -1 to remove newline sign
-            head, relation, tail  = line[:-1].split("\t")
+            if data_type is 'FB15K':
+                head, relation, tail  = line[:-1].split("\t")
+            elif data_type is 'WN9':
+                head, tail, relation  = line[:-1].split("\t")
             entity_counter.update([head, tail])
             relation_counter.update([relation])
     entity2id = {}
@@ -76,7 +79,7 @@ class FB15KDataset(data.Dataset):
         
 # https://pytorch.org/docs/stable/data.html?highlight=dataloader
 # 2 types of data, map and iter., following is map
-class W9Dataset(data.Dataset):
+class WN9Dataset(data.Dataset):
     """Dataset implementation for handling W9-IMG-TXT."""
 
     def __init__(self, data_path: str, entity2id: Mapping, relation2id: Mapping):

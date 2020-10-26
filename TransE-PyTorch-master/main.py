@@ -26,6 +26,9 @@ flags.DEFINE_integer("validation_freq", default=10, help="Validate model every X
 flags.DEFINE_string("checkpoint_path", default="", help="Path to model checkpoint (by default train from scratch).")
 flags.DEFINE_string("tensorboard_log_dir", default="./runs", help="Path for tensorboard log directory.")
 
+flags.DEFINE_string("en_reln_mapping", default="file", help="Function to use for creating embedding mappings.") # 'file', 'wn9', 'fb15k'
+flags.DEFINE_bool("retrain_text_layer", default=False, help="Retrain the PV-DM model.") 
+
 HITS_AT_1_SCORE = float
 HITS_AT_3_SCORE = float
 HITS_AT_10_SCORE = float
@@ -44,6 +47,7 @@ def test(model: torch.nn.Module, data_generator: torch_data.DataLoader, entities
 
     entity_ids = torch.arange(end=entities_count, device=device).unsqueeze(0) # Returns a 1-D tensor of size entities_count with values from 0 to entities_count, and then Returns a new tensor with a dimension of size one inserted at the specified position/ basically adding another dimension.
     for head, relation, tail in data_generator:
+        print(head, relation, tail)
         current_batch_size = head.size()[0]
 
         head, relation, tail = head.to(device), relation.to(device), tail.to(device)
@@ -101,8 +105,13 @@ def main(_):
     validation_path = os.path.join(path, "valid.txt")
     test_path = os.path.join(path, "test.txt")
 
-    # entity2id, relation2id = data.create_mappings(train_path)
-    entity2id, relation2id = data.create_mappings_for_W9(path)
+    if FLAGS.en_reln_mapping is 'file':
+        entity2id, relation2id = data.create_mappings_for_WN9(path)
+    elif FLAGS.en_reln_mapping is 'wn9':
+        entity2id, relation2id = data.create_mappings(train_path, 'WN9')
+    elif FLAGS.en_reln_mapping is 'fb15k':
+        entity2id, relation2id = data.create_mappings(train_path, 'FB15K')
+    
     
     #for key, value in sorted(entity2id.items(), key=lambda x: x[1]): 
     #    print("{} : {}".format(key, value))   # No OOKB entityid for now
@@ -117,14 +126,14 @@ def main(_):
     device = torch.device('cuda') if FLAGS.use_gpu else torch.device('cpu')
 
     # train_set = data.FB15KDataset(train_path, entity2id, relation2id)
-    train_set = data.W9Dataset(train_path, entity2id, relation2id)
+    train_set = data.WN9Dataset(train_path, entity2id, relation2id)
     # collate_fn (callable, optional) – merges a list of samples to form a mini-batch of Tensor(s). Used when using batched loading from a map-style dataset.
     train_generator = torch_data.DataLoader(train_set, batch_size=batch_size, collate_fn=collate_fn)
     # validation_set = data.FB15KDataset(validation_path, entity2id, relation2id)
-    validation_set = data.W9Dataset(validation_path, entity2id, relation2id)
+    validation_set = data.WN9Dataset(validation_path, entity2id, relation2id)
     validation_generator = torch_data.DataLoader(validation_set, batch_size=FLAGS.validation_batch_size, collate_fn=collate_fn)
     # test_set = data.FB15KDataset(test_path, entity2id, relation2id)
-    test_set = data.W9Dataset(test_path, entity2id, relation2id)
+    test_set = data.WN9Dataset(test_path, entity2id, relation2id)
     test_generator = torch_data.DataLoader(test_set, batch_size=FLAGS.validation_batch_size, collate_fn=collate_fn)
 
     model = model_definition.TransE(entity2id, entity_count=len(entity2id), relation_count=len(relation2id), dim=vector_length,

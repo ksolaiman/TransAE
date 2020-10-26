@@ -55,7 +55,7 @@ def pvdm(entity2id, retrain=True, vector_size=100, min_count=2, epochs=40):
 class AutoEncoder(torch.nn.Module):
     # TODO: nn.Embedding(num_embeddings=self.entity_count + 1 !!, embedding_dim=self.dim, padding_idx=self.entity_count !!)
     def __init__(self, entity2id, No_of_entities, text_embedding_dim=100, visual_embedding_dim=4096, 
-                 hidden_text_dim=50, hidden_visual_dim=512, hidden_dimension=50, activation='sigmoid'):
+                 hidden_text_dim=50, hidden_visual_dim=512, hidden_dimension=50, activation='sigmoid',             retrain_text_layer=False):
         """
         In the constructor we instantiate the modules and assign them as
         member variables.
@@ -69,6 +69,8 @@ class AutoEncoder(torch.nn.Module):
         self.text_embedding_dim = text_embedding_dim
         self.visual_embedding_dim = visual_embedding_dim
         self.criterion = nn.MSELoss(reduction='mean')        # L2 loss
+        
+        self.retrain_text_layer = retrain_text_layer
         
         # output from following two layers are v_1's
         # input layer
@@ -120,7 +122,7 @@ class AutoEncoder(torch.nn.Module):
         
         
     def _init_text_emb(self):
-        inferred_vector_list = pvdm(self.entity2id, retrain=False) # should just train on the ones in training set
+        inferred_vector_list = pvdm(self.entity2id, retrain=self.retrain_text_layer) # should just train on the ones in training set
         weights = np.zeros((self.entity_count + 1, self.text_embedding_dim)) # +1 to account for padding/OOKB, initialized to 0 each one
         for index in range(len(inferred_vector_list)):
             weights[index] = inferred_vector_list[index]
