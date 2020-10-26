@@ -9,7 +9,7 @@ import gensim
             
 def pvdm(entity2id, retrain=True, vector_size=100, min_count=2, epochs=40):
     if not retrain:
-        with open("../embedding_weights/textembed_" + str(vector_size) + "_" + str(min_count) + "_" + str(epochs) +".pkl", "rb") as emf:
+        with open("../embedding_weights/textembed_" + str(len(entity2id)) + "_" + str(vector_size) + "_" + str(min_count) + "_" + str(epochs) +".pkl", "rb") as emf:
             inferred_vector_list = pickle.load(emf)
         return inferred_vector_list
     
@@ -47,14 +47,14 @@ def pvdm(entity2id, retrain=True, vector_size=100, min_count=2, epochs=40):
         # print(inferred_vector)     # inferred_vector is of size embedding_dim
         inferred_vector_list.append(inferred_vector)
         
-    with open("../embedding_weights/textembed_" + str(vector_size) + "_" + str(min_count) + "_" + str(epochs) +".pkl", "wb+") as emf:
+    with open("../embedding_weights/textembed_" + str(len(entity2id)) + "_" + str(vector_size) + "_" + str(min_count) + "_" + str(epochs) +".pkl", "wb+") as emf:
         pickle.dump(inferred_vector_list, emf)
     
     return inferred_vector_list
 
 class AutoEncoder(torch.nn.Module):
     # TODO: nn.Embedding(num_embeddings=self.entity_count + 1 !!, embedding_dim=self.dim, padding_idx=self.entity_count !!)
-    def __init__(self, entity2id, No_of_entities, text_embedding_dim=100, visual_embedding_dim=4096, 
+    def __init__(self, entity2id, text_embedding_dim=100, visual_embedding_dim=4096, 
                  hidden_text_dim=50, hidden_visual_dim=512, hidden_dimension=50, activation='sigmoid',             retrain_text_layer=False):
         """
         In the constructor we instantiate the modules and assign them as
@@ -183,16 +183,15 @@ class AutoEncoder(torch.nn.Module):
         
 class TransE(nn.Module):
 
-    def __init__(self, entity2id, entity_count, relation_count, device, norm=1, dim=100, margin=1.0):
+    def __init__(self, entity_count, relation_count, device, autoencoder, norm=1, dim=100, margin=1.0):
         super(TransE, self).__init__()
-        self.entity2id = entity2id           # for autoencoder embedding layer weight initialization
         self.entity_count = entity_count
         self.relation_count = relation_count
         self.device = device
         self.norm = norm
         self.dim = dim                                # probably d in the TransAE paper
         # self.entities_emb = self._init_enitity_emb()
-        self.autoencoder = AutoEncoder(self.entity2id, self.entity_count)
+        self.autoencoder = autoencoder # AutoEncoder(self.entity2id)
         self.relations_emb = self._init_relation_emb()
         self.criterion = nn.MarginRankingLoss(margin=margin, reduction='mean') # replaced reduction='none', as it makes it easier to add reconstruction loss
 

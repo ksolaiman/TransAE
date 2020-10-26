@@ -19,3 +19,9 @@ conda create -n myenv --file package-list.txt
 
 
 CUDA_VISIBLE_DEVICES=1,2 python myscript.py
+
+
+For Debug:
+# en_reln_mapping needs to be wn9, as there is no small entity2id or relation2id mapping files
+# retrain_text_layer can be false for subsequent runs
+python3 main.py --nouse_gpu --dataset_path=synth_data_WN9/ --validation_freq=1 --en_reln_mapping='wn9' --retrain_text_layer=True

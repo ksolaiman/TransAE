@@ -111,6 +111,8 @@ def main(_):
         entity2id, relation2id = data.create_mappings(train_path, 'WN9')
     elif FLAGS.en_reln_mapping is 'fb15k':
         entity2id, relation2id = data.create_mappings(train_path, 'FB15K')
+    else:
+        entity2id, relation2id = data.create_mappings(train_path, 'WN9')
     
     
     #for key, value in sorted(entity2id.items(), key=lambda x: x[1]): 
@@ -136,9 +138,11 @@ def main(_):
     test_set = data.WN9Dataset(test_path, entity2id, relation2id)
     test_generator = torch_data.DataLoader(test_set, batch_size=FLAGS.validation_batch_size, collate_fn=collate_fn)
 
-    model = model_definition.TransE(entity2id, entity_count=len(entity2id), relation_count=len(relation2id), dim=vector_length,
+    autoencoder =  model_definition.AutoEncoder(entity2id, retrain_text_layer=FLAGS.retrain_text_layer) # for autoencoder embedding layer weight initialization
+    model = model_definition.TransE(entity_count=len(entity2id), relation_count=len(relation2id), dim=vector_length,
                                     margin=margin,
-                                    device=device, norm=norm)  # type: torch.nn.Module
+                                    device=device, norm=norm,
+                                    autoencoder=autoencoder)  # type: torch.nn.Module
     model = model.to(device)
     optimizer = optim.SGD(model.parameters(), lr=learning_rate)
 
