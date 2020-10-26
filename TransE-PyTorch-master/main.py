@@ -168,21 +168,23 @@ def main(_):
             optimizer.zero_grad()
 
             loss, pd, nd = model(positive_triples, negative_triples)
-            loss.mean().backward()
-
-            summary_writer.add_scalar('Loss/train', loss.mean().data.cpu().numpy(), global_step=step)
+            # loss.mean().backward()
+            loss.backward()
+    
+            summary_writer.add_scalar('Loss/train', loss.data.cpu().numpy(), global_step=step)
+#           summary_writer.add_scalar('Loss/train', loss.mean().data.cpu().numpy(), global_step=step)
             summary_writer.add_scalar('Distance/positive', pd.sum().data.cpu().numpy(), global_step=step)
             summary_writer.add_scalar('Distance/negative', nd.sum().data.cpu().numpy(), global_step=step)
 
             loss = loss.data.cpu()
-            loss_impacting_samples_count += loss.nonzero().size()[0]
-            samples_count += loss.size()[0]
+            #loss_impacting_samples_count += loss.nonzero().size()[0]
+            #samples_count += loss.size()[0]
 
             optimizer.step()
             step += 1
 
-        summary_writer.add_scalar('Metrics/loss_impacting_samples', loss_impacting_samples_count / samples_count * 100,
-                                  global_step=epoch_id)
+        #summary_writer.add_scalar('Metrics/loss_impacting_samples', loss_impacting_samples_count / samples_count * 100,
+        #                          global_step=epoch_id)
 
         if epoch_id % FLAGS.validation_freq == 0:
             model.eval()

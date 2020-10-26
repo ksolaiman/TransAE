@@ -68,7 +68,7 @@ class AutoEncoder(torch.nn.Module):
         self.dim = hidden_text_dim
         self.text_embedding_dim = text_embedding_dim
         self.visual_embedding_dim = visual_embedding_dim
-        self.criterion = nn.MSELoss(reduction='mean')
+        self.criterion = nn.MSELoss(reduction='mean')        # L2 loss
         
         # output from following two layers are v_1's
         # input layer
@@ -199,7 +199,7 @@ class TransE(nn.Module):
         self.autoencoder = AutoEncoder(self.entity2id, self.entity_count)
         # self.entities_emb = self.autoencoder.encoder_combined_linear
         self.relations_emb = self._init_relation_emb()
-        self.criterion = nn.MarginRankingLoss(margin=margin, reduction='none')
+        self.criterion = nn.MarginRankingLoss(margin=margin, reduction='mean') # replaced reduction='none', as it makes it easier to add reconstruction loss
 
     def _init_enitity_emb(self):
         entities_emb = nn.Embedding(num_embeddings=self.entity_count + 1,
@@ -226,6 +226,7 @@ class TransE(nn.Module):
         :param negative_triplets: triplets of negatives in Bx3 shape (B - batch, 3 - head, relation and tail)
         :return: tuple of the model loss, positive triplets loss component, negative triples loss component
         """
+        #TODO: This line needs to be fixed
         # -1 to avoid nan for OOV vector
         self.entities_emb.weight.data[:-1, :].div_(self.entities_emb.weight.data[:-1, :].norm(p=2, dim=1, keepdim=True))
 
@@ -237,7 +238,7 @@ class TransE(nn.Module):
 
         # may have to change TransE loss function, add reduction as mean, instead of doint it in main func
         # then add to self.loss(..) + recon_loss_pos + recon_loss_neg
-        return self.loss(positive_distances, negative_distances), positive_distances, negative_distances
+        return self.loss(positive_distances, negative_distances) + recon_loss_pos + recon_loss_neg, positive_distances, negative_distances
 
     def predict(self, triplets: torch.LongTensor):
         """Calculated dissimilarity score for given triplets.
@@ -257,10 +258,8 @@ class TransE(nn.Module):
         heads = triplets[:, 0]
         relations = triplets[:, 1]
         tails = triplets[:, 2]
-        v1_t, v5_t, v1_i, v5_i, v3_h, recon_loss_h = self.autoencoder(heads)
-        # recon_error = self.autoencoder.criterion(v1_t, v5_t) + self.autoencoder.criterion(v1_i, v5_i)
-        # print(recon_error)
+        v1_t, v5_t, v1_i, v5_i, v3_h, recon_loss_h = self.autoencoder(heads) # can delete first 4 returns (v1_t ... v3_h)
         v1_t, v5_t, v1_i, v5_i, v3_t, recon_loss_t = self.autoencoder(tails)
-        input("wait")
+        # input("wait")
         # return (self.entities_emb(heads) + self.relations_emb(relations) - self.entities_emb(tails)).norm(p=self.norm, dim=1)
         return (v3_h + self.relations_emb(relations) - v3_t).norm(p=self.norm, dim=1), recon_loss_h + recon_loss_t
