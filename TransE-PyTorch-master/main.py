@@ -82,6 +82,15 @@ def test(model: torch.nn.Module, data_generator: torch_data.DataLoader, entities
     return hits_at_1_score, hits_at_3_score, hits_at_10_score, mrr_score
 
 
+def collate_fn(data):
+    # print(data) # prints one batch of data, i.e., [('4684', 1, '1363'), ('2814', 1, '5384'), ('3045', 1, '3039')]
+    heads, relations, tails = list(), list(), list()
+    for i in range(len(data)):
+        heads.append(int(data[i][0]))
+        relations.append(data[i][1])
+        tails.append(int(data[i][2])) # coz they are string
+    return torch.tensor(heads), torch.tensor(relations), torch.tensor(tails)
+
 def main(_):
     torch.random.manual_seed(FLAGS.seed)
     torch.backends.cudnn.deterministic = True
@@ -109,13 +118,14 @@ def main(_):
 
     # train_set = data.FB15KDataset(train_path, entity2id, relation2id)
     train_set = data.W9Dataset(train_path, entity2id, relation2id)
-    train_generator = torch_data.DataLoader(train_set, batch_size=batch_size)
+    # collate_fn (callable, optional) – merges a list of samples to form a mini-batch of Tensor(s). Used when using batched loading from a map-style dataset.
+    train_generator = torch_data.DataLoader(train_set, batch_size=batch_size, collate_fn=collate_fn)
     # validation_set = data.FB15KDataset(validation_path, entity2id, relation2id)
     validation_set = data.W9Dataset(validation_path, entity2id, relation2id)
-    validation_generator = torch_data.DataLoader(validation_set, batch_size=FLAGS.validation_batch_size)
+    validation_generator = torch_data.DataLoader(validation_set, batch_size=FLAGS.validation_batch_size, collate_fn=collate_fn)
     # test_set = data.FB15KDataset(test_path, entity2id, relation2id)
     test_set = data.W9Dataset(test_path, entity2id, relation2id)
-    test_generator = torch_data.DataLoader(test_set, batch_size=FLAGS.validation_batch_size)
+    test_generator = torch_data.DataLoader(test_set, batch_size=FLAGS.validation_batch_size, collate_fn=collate_fn)
 
     model = model_definition.TransE(entity2id, entity_count=len(entity2id), relation_count=len(relation2id), dim=vector_length,
                                     margin=margin,
@@ -141,6 +151,7 @@ def main(_):
         model.train()
 
         for local_heads, local_relations, local_tails in train_generator:
+            # data was not well prepared, had to use collate_fn in Dataloaders to fix it, will find it above
             local_heads, local_relations, local_tails = (local_heads.to(device), local_relations.to(device),
                                                          local_tails.to(device))
 
