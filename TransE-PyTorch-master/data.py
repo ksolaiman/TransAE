@@ -25,7 +25,9 @@ def create_mappings_for_WN9(path: str) -> Tuple[Mapping, Mapping]:
     
     return entity2id, relation2id
 
-def create_mappings(dataset_path: str, data_type='FB15K': str) -> Tuple[Mapping, Mapping]:
+# https://stackoverflow.com/questions/38727520/adding-default-parameter-value-with-type-hint-in-python
+# https://stackoverflow.com/questions/54962869/function-parameter-with-colon
+def create_mappings(dataset_path: str, data_type: str ='FB15K') -> Tuple[Mapping, Mapping]:
     """Creates separate mappings to indices for entities and relations."""
     # counters to have entities/relations sorted from most frequent
     entity_counter = Counter()
