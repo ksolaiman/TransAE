@@ -174,7 +174,7 @@ class AutoEncoder(torch.nn.Module):
         ## a = torch.cat((v1_t, v1_i), dim=1) 
         ## b = torch.cat((v5_t, v5_i), dim=1) 
         ## recon_error = self.criterion(a, b)
-        print(recon_error)
+        ## print(recon_error)
         
         return v3, recon_error
         
@@ -220,9 +220,14 @@ class TransE(nn.Module):
         :param negative_triplets: triplets of negatives in Bx3 shape (B - batch, 3 - head, relation and tail)
         :return: tuple of the model loss, positive triplets loss component, negative triples loss component
         """
-        #TODO: This line needs to be fixed
+        
+        # print(self.autoencoder.encoder_combined_linear[0].weight.data)   # accessing specific layer in sequentional layers:                                        # https://discuss.pytorch.org/t/access-weights-of-a-specific-module-in-nn-sequential/3627
+                            # last index weights are not NaN anymore, but it stays same throughout training !!, as no update
+        
+        # DONE: TODO: This line needs to be fixed
         # -1 to avoid nan for OOV vector
-        self.entities_emb.weight.data[:-1, :].div_(self.entities_emb.weight.data[:-1, :].norm(p=2, dim=1, keepdim=True))
+        # self.entities_emb.weight.data[:-1, :].div_(self.entities_emb.weight.data[:-1, :].norm(p=2, dim=1, keepdim=True))
+        self.autoencoder.encoder_combined_linear[0].weight.data.div_(self.autoencoder.encoder_combined_linear[0].weight.data.norm(p=2, dim=1, keepdim=True))
 
         assert positive_triplets.size()[1] == 3
         positive_distances, recon_loss_pos = self._distance(positive_triplets)
