@@ -21,7 +21,7 @@ def create_mappings_for_W9(path: str) -> Tuple[Mapping, Mapping]:
         for line in f:
             # -1 to remove newline sign
             relation, idx  = line[:-1].split("\t")
-            relation2id[entity] = idx
+            relation2id[relation] = idx
     
     return entity2id, relation2id
 
