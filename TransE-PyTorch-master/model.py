@@ -203,8 +203,6 @@ class TransE(nn.Module):
         return entities_emb
 
     def _init_relation_emb(self):
-        print(self.relation_count)
-        input("wait")
         relations_emb = nn.Embedding(num_embeddings=self.relation_count + 1,
                                      embedding_dim=self.dim,
                                      padding_idx=self.relation_count)
