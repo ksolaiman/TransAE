@@ -150,18 +150,12 @@ class AutoEncoder(torch.nn.Module):
         v1_t = self.text_embedding(entity_id_tensors).float()
         v1_i = self.visual_embedding(entity_id_tensors)
         
-        print(v1_t.size())
-        print(v1_i.size())
-        
         v2_t = self.encoder_text_linear1(v1_t)
         v2_i = self.encoder_visual_linear1(v1_i)
         
-        print(v2_t.size())
-        print(v2_i.size())
-        
         v3 = self.encoder_combined_linear(torch.cat((v2_t, v2_i), 1))
-        print(v3.size())
-        print(torch.cat((v2_t, v2_i), 1).size())
+        ### print(v3.size())
+        ### print(torch.cat((v2_t, v2_i), 1).size())
         
         v4_t = self.decoder_text_linear1(v3)
         v4_i = self.decoder_visual_linear1(v3)
@@ -169,20 +163,20 @@ class AutoEncoder(torch.nn.Module):
         v5_t = self.decoder_text_linear2(v4_t)
         v5_i = self.decoder_visual_linear2(v4_i)
         
-        print(v5_t.size())
-        print(v5_i.size())
+        ### print(v5_t.size())
+        ### print(v5_i.size())
         
-        ## a = torch.cat((v1_t, v1_i), dim=1) 
-        ## b = torch.cat((v5_t, v5_i), dim=1) 
-        # should happen for each entity call, either positive or negative sample, does not matter
+        
+        # should happen for each entity call, either positive or negative sample, does not matter, so has to be done here
         # can use the following only when loss has mean/sum as 'reduction' defined
         recon_error = self.criterion(v1_t, v5_t) + self.criterion(v1_i, v5_i)
-        ##print(recon_error.size())
         ## or, the following
-        ##recon_error = self.criterion(a, b)
+        ## a = torch.cat((v1_t, v1_i), dim=1) 
+        ## b = torch.cat((v5_t, v5_i), dim=1) 
+        ## recon_error = self.criterion(a, b)
         print(recon_error)
         print(recon_error.size())
-        return v1_t, v5_t, v1_i, v5_i, v3, recon_error
+        return v3, recon_error
         
         
 class TransE(nn.Module):
@@ -236,7 +230,7 @@ class TransE(nn.Module):
         assert negative_triplets.size()[1] == 3
         negative_distances, recon_loss_neg = self._distance(negative_triplets)
 
-        # may have to change TransE loss function, add reduction as mean, instead of doint it in main func
+        # DONE: may have to change TransE loss function, add reduction as mean, instead of doint it in main func
         # then add to self.loss(..) + recon_loss_pos + recon_loss_neg
         return self.loss(positive_distances, negative_distances) + recon_loss_pos + recon_loss_neg, positive_distances, negative_distances
 
@@ -258,8 +252,8 @@ class TransE(nn.Module):
         heads = triplets[:, 0]
         relations = triplets[:, 1]
         tails = triplets[:, 2]
-        v1_t, v5_t, v1_i, v5_i, v3_h, recon_loss_h = self.autoencoder(heads) # can delete first 4 returns (v1_t ... v3_h)
-        v1_t, v5_t, v1_i, v5_i, v3_t, recon_loss_t = self.autoencoder(tails)
+        v3_h, recon_loss_h = self.autoencoder(heads) 
+        v3_t, recon_loss_t = self.autoencoder(tails)
         # input("wait")
         # return (self.entities_emb(heads) + self.relations_emb(relations) - self.entities_emb(tails)).norm(p=self.norm, dim=1)
         return (v3_h + self.relations_emb(relations) - v3_t).norm(p=self.norm, dim=1), recon_loss_h + recon_loss_t
