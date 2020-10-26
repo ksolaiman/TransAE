@@ -16,3 +16,6 @@ conda list --export > package-list.txt
 
 Reinstall packages from the export file:
 conda create -n myenv --file package-list.txt
+
+
+CUDA_VISIBLE_DEVICES=1,2 python myscript.py
