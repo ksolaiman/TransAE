@@ -92,7 +92,8 @@ def main(_):
     validation_path = os.path.join(path, "valid.txt")
     test_path = os.path.join(path, "test.txt")
 
-    entity2id, relation2id = data.create_mappings(train_path)
+    # entity2id, relation2id = data.create_mappings(train_path)
+    entity2id, relation2id = data.create_mappings_for_W9(path)
     
     #for key, value in sorted(entity2id.items(), key=lambda x: x[1]): 
     #    print("{} : {}".format(key, value))   # No OOKB entityid for now
@@ -106,11 +107,14 @@ def main(_):
     epochs = FLAGS.epochs
     device = torch.device('cuda') if FLAGS.use_gpu else torch.device('cpu')
 
-    train_set = data.FB15KDataset(train_path, entity2id, relation2id)
+    # train_set = data.FB15KDataset(train_path, entity2id, relation2id)
+    train_set = data.W9Dataset(train_path, entity2id, relation2id)
     train_generator = torch_data.DataLoader(train_set, batch_size=batch_size)
-    validation_set = data.FB15KDataset(validation_path, entity2id, relation2id)
+    # validation_set = data.FB15KDataset(validation_path, entity2id, relation2id)
+    validation_set = data.W9Dataset(validation_path, entity2id, relation2id)
     validation_generator = torch_data.DataLoader(validation_set, batch_size=FLAGS.validation_batch_size)
-    test_set = data.FB15KDataset(test_path, entity2id, relation2id)
+    # test_set = data.FB15KDataset(test_path, entity2id, relation2id)
+    test_set = data.W9Dataset(test_path, entity2id, relation2id)
     test_generator = torch_data.DataLoader(test_set, batch_size=FLAGS.validation_batch_size)
 
     model = model_definition.TransE(entity2id, entity_count=len(entity2id), relation_count=len(relation2id), dim=vector_length,
