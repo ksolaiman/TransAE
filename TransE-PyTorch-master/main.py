@@ -28,6 +28,7 @@ flags.DEFINE_string("tensorboard_log_dir", default="./runs", help="Path for tens
 
 flags.DEFINE_string("en_reln_mapping", default="file", help="Function to use for creating embedding mappings.") # 'file', 'wn9', 'fb15k'
 flags.DEFINE_bool("retrain_text_layer", default=False, help="Retrain the PV-DM model.") 
+flags.DEFINE_bool("test_only", default=False, help="Just running the saved model on test dataset.") 
 
 HITS_AT_1_SCORE = float
 HITS_AT_3_SCORE = float
@@ -160,6 +161,9 @@ def main(_):
 
     print(model)
 
+    if FLAGS.test_only:
+        epochs = -1
+        start_epoch_id = 0
     # Training loop
     for epoch_id in range(start_epoch_id, epochs + 1):
         print("Starting epoch: ", epoch_id)
