@@ -58,7 +58,7 @@ def test(model: torch.nn.Module, data_generator: torch_data.DataLoader, entities
         
         # Check all possible tails
         triplets = torch.stack((heads, relations, all_entities), dim=2).reshape(-1, 3)
-        print(triplets)
+        # print(triplets)
         tails_predictions = model.predict(triplets).reshape(current_batch_size, -1)
         # Check all possible heads
         triplets = torch.stack((all_entities, relations, tails), dim=2).reshape(-1, 3)
