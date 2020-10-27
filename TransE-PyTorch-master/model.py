@@ -245,7 +245,8 @@ class TransE(nn.Module):
         :param triplets: triplets in Bx3 shape (B - batch, 3 - head, relation and tail)
         :return: dissimilarity score for given triplets
         """
-        return self._distance(triplets)
+        # had to add [0] as we are returning both distance and recon. loss now from _distance
+        return self._distance(triplets)[0]
 
     def loss(self, positive_distances, negative_distances):
         target = torch.tensor([-1], dtype=torch.long, device=self.device)

@@ -47,7 +47,7 @@ def test(model: torch.nn.Module, data_generator: torch_data.DataLoader, entities
 
     entity_ids = torch.arange(end=entities_count, device=device).unsqueeze(0) # Returns a 1-D tensor of size entities_count with values from 0 to entities_count, and then Returns a new tensor with a dimension of size one inserted at the specified position/ basically adding another dimension.
     for head, relation, tail in data_generator:
-        print(head, relation, tail)
+        # print(head, relation, tail)
         current_batch_size = head.size()[0]
 
         head, relation, tail = head.to(device), relation.to(device), tail.to(device)
@@ -55,9 +55,10 @@ def test(model: torch.nn.Module, data_generator: torch_data.DataLoader, entities
         heads = head.reshape(-1, 1).repeat(1, all_entities.size()[1])
         relations = relation.reshape(-1, 1).repeat(1, all_entities.size()[1])
         tails = tail.reshape(-1, 1).repeat(1, all_entities.size()[1])
-
+        
         # Check all possible tails
         triplets = torch.stack((heads, relations, all_entities), dim=2).reshape(-1, 3)
+        print(triplets)
         tails_predictions = model.predict(triplets).reshape(current_batch_size, -1)
         # Check all possible heads
         triplets = torch.stack((all_entities, relations, tails), dim=2).reshape(-1, 3)
@@ -66,7 +67,10 @@ def test(model: torch.nn.Module, data_generator: torch_data.DataLoader, entities
         # Concat predictions
         predictions = torch.cat((tails_predictions, heads_predictions), dim=0)
         ground_truth_entity_id = torch.cat((tail.reshape(-1, 1), head.reshape(-1, 1)))
+        
+        # Each prediction is an array of N size, where N is no_of_Entity_in_KB, and there are no_of_samples_in_batch * 2 (head & tail) ground_truth and column level prediction
 
+        # https://medium.com/@m_n_malaeb/recall-and-precision-at-k-for-recommender-systems-618483226c54
         hits_at_1 += metric.hit_at_k(predictions, ground_truth_entity_id, device=device, k=1)
         hits_at_3 += metric.hit_at_k(predictions, ground_truth_entity_id, device=device, k=3)
         hits_at_10 += metric.hit_at_k(predictions, ground_truth_entity_id, device=device, k=10)
@@ -206,6 +210,7 @@ def main(_):
                                        device=device, summary_writer=summary_writer,
                                        epoch_id=epoch_id, metric_suffix="val")
             score = hits_at_10
+            print(score)
             if score > best_score:
                 best_score = score
                 storage.save_checkpoint(model, optimizer, epoch_id, step, best_score)
