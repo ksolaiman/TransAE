@@ -1,4 +1,5 @@
 import torchvision.models as models
+from torchvision import datasets, transforms
 import torch
 import collections
 from PIL import Image
@@ -31,23 +32,32 @@ transformation_model = transforms.Compose([
 ])
 
 entity2img_embed = dict()
-for foldername in glob.glob("imagenet/Dataset/"):
-    entity = foldername[17:]
+for foldername in glob.glob("data/Dataset/*"):
+    entity = foldername[13:]
     input_img = []
-    for filename in glob.glob("imagenet/Dataset/"+entity+"/*.jp*g"):
-        # print(filename)
+    print(entity)
+    for filename in glob.glob("data/Dataset/"+entity+"/*.jp*g"):
+        print(filename)
         try:
             im=Image.open(filename)
             im = transformation_model(im)
             input_img.append(im)
         except:
             print(filename+" did not load")
-            
-    input_img = torch.stack(input_img, dim=0) 
-    # all_input_img.append(input_img)
-    result = vgg16(input_img)
-    result = result.mean(0)
-    entity2img_embed[entity] = result
+   
+
+    if len(input_img) > 0:
+        input_img = torch.stack(input_img, dim=0) 
+        # all_input_img.append(input_img)
+        result = vgg16(input_img)
+        result = result.mean(0)
+        # print(result)
+        with open("data/Dataset/"+entity+"/avg_embedding.pkl", "wb+") as f:
+            pickle.dump(result, f)
+        entity2img_embed[entity] = result
+    else:
+        print(entity)
+        entity2img_embed[entity] = None
 
 # print(entity2img_embed)
 with open("entity2imgembed.pickle", "wb+") as f:
