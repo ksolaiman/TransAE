@@ -53,7 +53,7 @@ def pvdm(entity2id, retrain=True, vector_size=100, min_count=2, epochs=40):
     return inferred_vector_list
 
 class AutoEncoder(torch.nn.Module):
-    # TODO: nn.Embedding(num_embeddings=self.entity_count + 1 !!, embedding_dim=self.dim, padding_idx=self.entity_count !!)
+    # nn.Embedding(num_embeddings=self.entity_count + 1 !!, embedding_dim=self.dim, padding_idx=self.entity_count !!)
     def __init__(self, entity2id, text_embedding_dim=100, visual_embedding_dim=4096, 
                  hidden_text_dim=50, hidden_visual_dim=512, hidden_dimension=50, activation='sigmoid',             retrain_text_layer=False):
         """
@@ -133,11 +133,30 @@ class AutoEncoder(torch.nn.Module):
     
     # TODO: initialize visual embedding layers
     def _init_visual_emb(self):
-        entities_emb = nn.Embedding(num_embeddings=self.entity_count + 1,
-                                    embedding_dim=self.visual_embedding_dim,
-                                    padding_idx=self.entity_count)
-        uniform_range = 6 / np.sqrt(self.dim)         # Equn 16 in the Xavier initialization paper from TransE paper
-        entities_emb.weight.data.uniform_(-uniform_range, uniform_range)
+        uniform_range = 6 / np.sqrt(self.visual_embedding_dim)
+        weights = torch.empty(self.entity_count + 1, self.visual_embedding_dim)
+        nn.init.uniform_(weights, -uniform_range, uniform_range)
+        # np.random.uniform(low=-uniform_range, high=uniform_range, size=(self.entity_count + 1, self.visual_embedding_dim))
+        no_embed = 0
+        for index, entity in enumerate(self.entity2id):
+            # print(index, entity)
+            try:
+                # print("../data/Dataset/" + entity + "/avg_embedding.pkl")
+                with open("../data/Dataset/" + entity + "/avg_embedding.pkl", "rb") as visef:
+                    em = pickle.load(visef)
+                    weights[index] = em
+            except:
+                print(index, entity)
+                no_embed = no_embed+1
+                continue
+        print(no_embed)
+        # weights = torch.from_numpy(weights)
+        entities_emb = nn.Embedding.from_pretrained(weights, padding_idx=self.entity_count)
+        #nn.Embedding(num_embeddings=self.entity_count + 1,
+        #                            embedding_dim=self.visual_embedding_dim,
+        #                            padding_idx=self.entity_count)
+        #uniform_range = 6 / np.sqrt(self.dim)         # Equn 16 in the Xavier initialization paper from TransE paper
+        #entities_emb.weight.data.uniform_(-uniform_range, uniform_range)
         return entities_emb
 
         
