@@ -31,8 +31,59 @@ transformation_model = transforms.Compose([
     normalize
 ])
 
+all_input_img = []
+entity_ids = []
+batch_size = 0 
+emb_dim = 4096
+batch_dim = 16
+with open("WN9-IMG_IKRL/entity2id.txt", "r") as enidf:
+    for line in enidf:
+        entity = line.split()[0]
+        print(entity)
+        input_img = []
+        for filename in glob.glob("data/Dataset/"+entity+"/*.jp*g"):
+            print(filename)
+            try:
+                im=Image.open(filename)
+                im = transformation_model(im)
+                input_img.append(im)
+            except:
+                print(filename+" did not load")
+                
+        if len(input_img) > 0 and batch_size + len(input_img) <= batch_dim:
+            input_img = torch.stack(input_img, dim=0) 
+            all_input_img.append(input_img)
+            batch_size += len(input_img)
+            print(batch_size)
+            entity_ids.append(entity)
+        elif len(input_img) > 0 and batch_size + len(input_img) > batch_dim:
+            lengths = [len(item) for item in all_input_img]
+            vgg_input = torch.cat(all_input_img, dim=0) 
+            result = vgg16(vgg_input)
+            results_split = torch.split(result, lengths)
+            for index, item in enumerate(results_split):
+                embed = item.mean(0)
+                print(embed.size())
+                with open("data/Dataset/" + entity_ids[index] + "/avg_embedding.pkl", "wb+") as f:
+                    pickle.dump(embed, f)
+                
+            
+            # reinitialize
+            all_input_img = []
+            batch_size = 0 
+            entity_ids = []
+            # add the remanent into it
+            input_img = torch.stack(input_img, dim=0) 
+            all_input_img.append(input_img)
+            batch_size += len(input_img)
+            print(batch_size)
+            entity_ids.append(entity)
+            
+        input("wait")
+
 entity2img_embed = dict()
-for foldername in glob.glob("data/Dataset/*"):
+all_input_img = []
+for foldername in glob.glob("data/Dataset/n1034*"):
     entity = foldername[13:]
     input_img = []
     print(entity)
@@ -45,20 +96,32 @@ for foldername in glob.glob("data/Dataset/*"):
         except:
             print(filename+" did not load")
    
-
+    
     if len(input_img) > 0:
         input_img = torch.stack(input_img, dim=0) 
-        # all_input_img.append(input_img)
-        result = vgg16(input_img)
-        result = result.mean(0)
-        # print(result)
-        with open("data/Dataset/"+entity+"/avg_embedding.pkl", "wb+") as f:
-            pickle.dump(result, f)
-        entity2img_embed[entity] = result
+        all_input_img.append(input_img)
+#         result = vgg16(input_img)
+#         result = result.mean(0)
+#         with open("data/Dataset/"+entity+"/avg_embedding.pkl", "wb+") as f:
+#             pickle.dump(result, f)
+#         entity2img_embed[entity] = result
     else:
         print(entity)
-        entity2img_embed[entity] = None
+#         entity2img_embed[entity] = None
 
 # print(entity2img_embed)
-with open("entity2imgembed.pickle", "wb+") as f:
-    pickle.dump(entity2img_embed, f)
+# with open("entity2imgembed.pickle", "wb+") as f:
+#     pickle.dump(entity2img_embed, f)
+
+print([len(item) for item in all_input_img])
+lengths = [len(item) for item in all_input_img]
+all_input_img_2 = torch.cat(all_input_img, dim=0) 
+print(all_input_img_2.size())
+
+
+result = vgg16(all_input_img_2)
+print(result.size())
+
+results_split = torch.split(result, lengths)
+print(results_split[0].size())
+
