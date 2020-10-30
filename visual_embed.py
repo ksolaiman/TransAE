@@ -35,7 +35,7 @@ all_input_img = []
 entity_ids = []
 batch_size = 0 
 emb_dim = 4096
-batch_dim = 16
+batch_dim = 32
 with open("WN9-IMG_IKRL/entity2id.txt", "r") as enidf:
     for line in enidf:
         entity = line.split()[0]
@@ -79,49 +79,3 @@ with open("WN9-IMG_IKRL/entity2id.txt", "r") as enidf:
             print(batch_size)
             entity_ids.append(entity)
             
-        input("wait")
-
-entity2img_embed = dict()
-all_input_img = []
-for foldername in glob.glob("data/Dataset/n1034*"):
-    entity = foldername[13:]
-    input_img = []
-    print(entity)
-    for filename in glob.glob("data/Dataset/"+entity+"/*.jp*g"):
-        print(filename)
-        try:
-            im=Image.open(filename)
-            im = transformation_model(im)
-            input_img.append(im)
-        except:
-            print(filename+" did not load")
-   
-    
-    if len(input_img) > 0:
-        input_img = torch.stack(input_img, dim=0) 
-        all_input_img.append(input_img)
-#         result = vgg16(input_img)
-#         result = result.mean(0)
-#         with open("data/Dataset/"+entity+"/avg_embedding.pkl", "wb+") as f:
-#             pickle.dump(result, f)
-#         entity2img_embed[entity] = result
-    else:
-        print(entity)
-#         entity2img_embed[entity] = None
-
-# print(entity2img_embed)
-# with open("entity2imgembed.pickle", "wb+") as f:
-#     pickle.dump(entity2img_embed, f)
-
-print([len(item) for item in all_input_img])
-lengths = [len(item) for item in all_input_img]
-all_input_img_2 = torch.cat(all_input_img, dim=0) 
-print(all_input_img_2.size())
-
-
-result = vgg16(all_input_img_2)
-print(result.size())
-
-results_split = torch.split(result, lengths)
-print(results_split[0].size())
-
