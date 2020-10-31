@@ -29,6 +29,7 @@ flags.DEFINE_string("tensorboard_log_dir", default="./runs", help="Path for tens
 flags.DEFINE_string("en_reln_mapping", default="file", help="Function to use for creating embedding mappings.") # 'file', 'wn9', 'fb15k'
 flags.DEFINE_bool("retrain_text_layer", default=False, help="Retrain the PV-DM model.") 
 flags.DEFINE_bool("test_only", default=False, help="Just running the saved model on test dataset.") 
+flags.DEFINE_float("beta", default=0.4, help="weight of margin ranking loss.")
 
 HITS_AT_1_SCORE = float
 HITS_AT_3_SCORE = float
@@ -143,13 +144,14 @@ def main(_):
     test_set = data.WN9Dataset(test_path, entity2id, relation2id)
     test_generator = torch_data.DataLoader(test_set, batch_size=FLAGS.validation_batch_size, collate_fn=collate_fn)
 
-    autoencoder =  model_definition.AutoEncoder(entity2id, retrain_text_layer=FLAGS.retrain_text_layer) # for autoencoder embedding layer weight initialization
+    autoencoder =  model_definition.AutoEncoder(entity2id, retrain_text_layer=FLAGS.retrain_text_layer, hidden_dimnesion=vector_length) # for autoencoder embedding layer weight initialization
     model = model_definition.TransE(entity_count=len(entity2id), relation_count=len(relation2id), dim=vector_length,
-                                    margin=margin,
+                                    margin=margin, beta=FLAGS.beta,
                                     device=device, norm=norm,
                                     autoencoder=autoencoder)  # type: torch.nn.Module
     model = model.to(device)
-    optimizer = optim.SGD(model.parameters(), lr=learning_rate)
+    # optimizer = optim.SGD(model.parameters(), lr=learning_rate)
+    optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
 
     summary_writer = tensorboard.SummaryWriter(log_dir=FLAGS.tensorboard_log_dir)
     start_epoch_id = 1

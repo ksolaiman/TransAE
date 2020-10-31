@@ -65,7 +65,7 @@ class AutoEncoder(torch.nn.Module):
         self.entity2id = entity2id
         self.activation = nn.Sigmoid()
         self.entity_count = len(entity2id)
-        self.dim = hidden_text_dim
+        self.dim = hidden_dimension
         self.text_embedding_dim = text_embedding_dim
         self.visual_embedding_dim = visual_embedding_dim
         self.criterion = nn.MSELoss(reduction='mean')        # L2 loss
@@ -131,9 +131,9 @@ class AutoEncoder(torch.nn.Module):
         text_emb = nn.Embedding.from_pretrained(weights, padding_idx=self.entity_count)
         return text_emb
     
-    # TODO: initialize visual embedding layers
+    # DONE: TODO: initialize visual embedding layers
     def _init_visual_emb(self):
-        uniform_range = 6 / np.sqrt(self.visual_embedding_dim)
+        uniform_range = 6 / np.sqrt(self.dim)
         weights = torch.empty(self.entity_count + 1, self.visual_embedding_dim)
         nn.init.uniform_(weights, -uniform_range, uniform_range)
         # np.random.uniform(low=-uniform_range, high=uniform_range, size=(self.entity_count + 1, self.visual_embedding_dim))
@@ -146,7 +146,7 @@ class AutoEncoder(torch.nn.Module):
                     em = pickle.load(visef)
                     weights[index] = em
             except:
-                print(index, entity)
+                # print(index, entity)
                 no_embed = no_embed+1
                 continue
         print(no_embed)
@@ -202,7 +202,7 @@ class AutoEncoder(torch.nn.Module):
         
 class TransE(nn.Module):
 
-    def __init__(self, entity_count, relation_count, device, autoencoder, norm=1, dim=100, margin=1.0):
+    def __init__(self, entity_count, relation_count, device, autoencoder, norm=1, dim=100, margin=1.0, beta=0.5):
         super(TransE, self).__init__()
         self.entity_count = entity_count
         self.relation_count = relation_count
@@ -213,6 +213,7 @@ class TransE(nn.Module):
         self.autoencoder = autoencoder # AutoEncoder(self.entity2id)
         self.relations_emb = self._init_relation_emb()
         self.criterion = nn.MarginRankingLoss(margin=margin, reduction='mean') # replaced reduction='none', as it makes it easier to add reconstruction loss
+        self.beta = beta
 
     def _init_enitity_emb(self):
         entities_emb = nn.Embedding(num_embeddings=self.entity_count + 1,
@@ -269,7 +270,7 @@ class TransE(nn.Module):
 
     def loss(self, positive_distances, negative_distances):
         target = torch.tensor([-1], dtype=torch.long, device=self.device)
-        return self.criterion(positive_distances, negative_distances, target)
+        return self.beta * self.criterion(positive_distances, negative_distances, target)
 
     def _distance(self, triplets):
         """Triplets should have shape Bx3 where dim 3 are head id, relation id, tail id."""
