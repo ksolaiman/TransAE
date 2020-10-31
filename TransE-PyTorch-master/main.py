@@ -144,7 +144,7 @@ def main(_):
     test_set = data.WN9Dataset(test_path, entity2id, relation2id)
     test_generator = torch_data.DataLoader(test_set, batch_size=FLAGS.validation_batch_size, collate_fn=collate_fn)
 
-    autoencoder =  model_definition.AutoEncoder(entity2id, retrain_text_layer=FLAGS.retrain_text_layer, hidden_dimnesion=vector_length) # for autoencoder embedding layer weight initialization
+    autoencoder =  model_definition.AutoEncoder(entity2id, retrain_text_layer=FLAGS.retrain_text_layer, hidden_dimension=vector_length) # for autoencoder embedding layer weight initialization
     model = model_definition.TransE(entity_count=len(entity2id), relation_count=len(relation2id), dim=vector_length,
                                     margin=margin, beta=FLAGS.beta,
                                     device=device, norm=norm,
